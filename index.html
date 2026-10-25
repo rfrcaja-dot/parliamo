@@ -175,19 +175,26 @@ function iniciarVoz() {
     estado("🎙️ Te estoy escuchando. Habla ahora y pulsa STOP al terminar.");
   };
 
-  reconocimiento.onresult = (evento) => {
-    textoTemporal = "";
-    for (let i = evento.resultIndex; i < evento.results.length; i++) {
-      const texto = evento.results[i][0].transcript;
-      if (evento.results[i].isFinal) {
-        textoFinal += texto + " ";
-      } else {
-        textoTemporal += texto;
-      }
+  
+reconocimiento.onresult = (evento) => {
+  textoTemporal = "";
+
+  for (let i = evento.resultIndex; i < evento.results.length; i++) {
+    const resultado = evento.results[i];
+    const texto = resultado[0].transcript.trim();
+
+    if (resultado.isFinal && texto) {
+      // Añadir únicamente el resultado definitivo.
+      textoFinal += texto + " ";
+    } else if (!resultado.isFinal) {
+      // El texto provisional se muestra, pero no se guarda.
+      textoTemporal += texto + " ";
     }
-    document.getElementById("transcripcion").textContent =
-      (textoFinal + textoTemporal).trim() || "Escuchando...";
-  };
+  }
+
+  document.getElementById("transcripcion").textContent =
+    (textoFinal + textoTemporal).trim() || "Escuchando...";
+};
 
   reconocimiento.onerror = (evento) => {
     escuchando = false;
