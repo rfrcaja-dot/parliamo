@@ -176,25 +176,33 @@ function iniciarVoz() {
   };
 
   
+
 reconocimiento.onresult = (evento) => {
   textoTemporal = "";
 
-  for (let i = evento.resultIndex; i < evento.results.length; i++) {
+  // Reconstruir el texto a partir de los resultados recibidos.
+  // Así no añadimos dos veces un resultado ya reconocido.
+  const partesFinales = [];
+
+  for (let i = 0; i < evento.results.length; i++) {
     const resultado = evento.results[i];
     const texto = resultado[0].transcript.trim();
 
-    if (resultado.isFinal && texto) {
-      // Añadir únicamente el resultado definitivo.
-      textoFinal += texto + " ";
-    } else if (!resultado.isFinal) {
-      // El texto provisional se muestra, pero no se guarda.
+    if (!texto) continue;
+
+    if (resultado.isFinal) {
+      partesFinales.push(texto);
+    } else {
       textoTemporal += texto + " ";
     }
   }
 
+  textoFinal = partesFinales.join(" ") + (partesFinales.length ? " " : "");
+
   document.getElementById("transcripcion").textContent =
     (textoFinal + textoTemporal).trim() || "Escuchando...";
 };
+
 
   reconocimiento.onerror = (evento) => {
     escuchando = false;
