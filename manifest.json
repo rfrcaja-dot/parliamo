@@ -1,0 +1,15 @@
+
+{
+    "id": "/",
+    "name": "Parliamo! - Italiano en grupo",
+    "short_name": "Parliamo!",
+    "description": "Practica italiano con tus compañeros y aprende de tus errores.",
+    "lang": "es",
+    "start_url": "./index.html",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#f6f8f5",
+    "theme_color": "#16834a"
+  }
+  

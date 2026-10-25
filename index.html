@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parliamo!</title>
+<style>
+:root {
+  --verde:#4b8752; --rojo:#c33d4b; --fondo:#f6f8f5;
+  --texto:#202b25; --suave:#e8eee7;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; font-family:Arial,Helvetica,sans-serif;
+  color:var(--texto); background:var(--fondo);
+}
+header {
+  background:white; border-bottom:4px solid var(--verde);
+  padding:20px; text-align:center;
+}
+.logo { font-size:29px; font-weight:bold; }
+.bandera {
+  display:inline-block; width:10px; height:35px;
+  vertical-align:middle; margin-right:10px;
+  background:linear-gradient(to right,#16834a 33%,white 33%,white 66%,#d93643 66%);
+  border-radius:3px;
+}
+.subtitulo { color:#68756c; margin-top:6px; }
+main { max-width:760px; margin:24px auto; padding:0 18px; }
+h1 { font-size:25px; }
+label { display:block; font-weight:bold; margin:20px 0 9px; }
+select,button,.tarjeta {
+  font:inherit; border-radius:20px;
+}
+select {
+  width:100%; padding:14px; border:1px solid #dce2da;
+  background:white; margin-bottom:20px;
+}
+.tarjeta {
+  background:white; border:1px solid #dce2da;
+  padding:20px; margin:16px 0; border-radius:22px;
+}
+button {
+  border:0; padding:14px 19px; cursor:pointer;
+  font-weight:bold; margin:5px 5px 5px 0;
+}
+.verde { background:var(--verde); color:white; }
+.rojo { background:var(--rojo); color:white; }
+.claro { background:var(--suave); color:#23432a; }
+.volver { display:block; margin:0 auto 25px; }
+.oculto { display:none; }
+.estado { color:#53675a; font-size:14px; margin:12px 0; }
+.resultado {
+  white-space:pre-wrap; overflow-wrap:anywhere;
+  min-height:55px; line-height:1.5;
+}
+input[type=file] { max-width:100%; margin:15px 0; }
+#foto { display:block; max-width:100%; max-height:350px; margin-top:12px; }
+footer { text-align:center; color:#758078; padding:30px 10px; font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><span class="bandera"></span>Parliamo!</div>
+  <div class="subtitulo">Il tuo italiano, ogni giorno 🇮🇹</div>
+</header>
+
+<main>
+  <section id="inicio">
+    <h1>¡Aprendamos italiano!</h1>
+    <p>Practica hablando y leyendo. Tu compañero para aprender italiano, paso a paso.</p>
+    <label for="nivel">Tu nivel de italiano</label>
+    <select id="nivel">
+      <option value="A1">A1 · Inicial</option>
+      <option value="A2">A2 · Básico</option>
+      <option value="B1">B1 · Intermedio</option>
+      <option value="B2">B2 · Intermedio alto</option>
+      <option value="C1">C1 · Avanzado</option>
+    </select>
+    <div class="tarjeta" onclick="mostrar('hablar')" role="button" tabindex="0">
+      <h3>🎙️ Conversación</h3>
+      <p>Habla, practica y consulta lo que has dicho.</p>
+    </div>
+    <div class="tarjeta" onclick="mostrar('lectura')" role="button" tabindex="0">
+      <h3>📷 Lectura con cámara</h3>
+      <p>Fotografía un texto para trabajar con él.</p>
+    </div>
+  </section>
+
+  <section id="hablar" class="oculto">
+    <button class="verde volver" onclick="mostrar('inicio')">← Inicio</button>
+    <h1>🎙️ Practiquemos hablando</h1>
+    <p>Nivel seleccionado: <strong id="nivelVista">A1</strong></p>
+
+    <div class="tarjeta">
+      <p>Elige el idioma en el que vas a hablar y pulsa el micrófono.</p>
+      <label for="idioma">Idioma que vas a hablar</label>
+      <select id="idioma">
+        <option value="it-IT">Italiano</option>
+        <option value="es-ES">Español</option>
+      </select>
+      <button id="empezar" class="verde" onclick="iniciarVoz()">🎙️ Empezar a hablar</button>
+      <button class="rojo" onclick="pararVoz()">■ STOP</button>
+      <div id="estado" class="estado" aria-live="polite">Preparado para escuchar.</div>
+    </div>
+
+    <div class="tarjeta">
+      <h3>Lo que has dicho</h3>
+      <div id="transcripcion" class="resultado">Aquí aparecerá el texto reconocido.</div>
+      <button class="claro" onclick="leerTexto()">🔊 Escuchar texto</button>
+      <button class="claro" onclick="copiarTexto()">Copiar texto</button>
+    </div>
+
+    <div class="tarjeta">
+      <h3>Resultado corregido en italiano</h3>
+      <p>En el siguiente paso añadiremos la corrección y la traducción.</p>
+    </div>
+  </section>
+
+  <section id="lectura" class="oculto">
+    <button class="verde volver" onclick="mostrar('inicio')">← Inicio</button>
+    <h1>📷 Lectura con cámara</h1>
+    <p>Selecciona una foto de una página en italiano.</p>
+    <input id="archivoFoto" type="file" accept="image/*" capture="environment">
+    <img id="foto" class="oculto" alt="Vista previa de la fotografía">
+    <p id="avisoFoto" class="estado">La lectura automática del texto se añadirá en un siguiente paso.</p>
+  </section>
+</main>
+<footer>Parliamo! · Impara l'italiano con piacere</footer>
+
+<script>
+let reconocimiento = null;
+let escuchando = false;
+let textoFinal = "";
+let textoTemporal = "";
+
+function mostrar(id) {
+  document.querySelectorAll("main section").forEach(s => s.classList.add("oculto"));
+  document.getElementById(id).classList.remove("oculto");
+  if (id === "hablar") {
+    document.getElementById("nivelVista").textContent =
+      document.getElementById("nivel").value;
+  }
+}
+
+function estado(mensaje) {
+  document.getElementById("estado").textContent = mensaje;
+}
+
+function iniciarVoz() {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    estado("Este navegador no ofrece reconocimiento de voz. Prueba con Microsoft Edge actualizado.");
+    return;
+  }
+  if (escuchando) {
+    estado("Ya estoy escuchando. Habla y pulsa STOP cuando termines.");
+    return;
+  }
+
+  textoFinal = "";
+  textoTemporal = "";
+  document.getElementById("transcripcion").textContent = "";
+  reconocimiento = new SpeechRecognition();
+  reconocimiento.lang = document.getElementById("idioma").value;
+  reconocimiento.continuous = true;
+  reconocimiento.interimResults = true;
+  reconocimiento.maxAlternatives = 1;
+
+  reconocimiento.onstart = () => {
+    escuchando = true;
+    estado("🎙️ Te estoy escuchando. Habla ahora y pulsa STOP al terminar.");
+  };
+
+  reconocimiento.onresult = (evento) => {
+    textoTemporal = "";
+    for (let i = evento.resultIndex; i < evento.results.length; i++) {
+      const texto = evento.results[i][0].transcript;
+      if (evento.results[i].isFinal) {
+        textoFinal += texto + " ";
+      } else {
+        textoTemporal += texto;
+      }
+    }
+    document.getElementById("transcripcion").textContent =
+      (textoFinal + textoTemporal).trim() || "Escuchando...";
+  };
+
+  reconocimiento.onerror = (evento) => {
+    escuchando = false;
+    const mensajes = {
+      "not-allowed": "No hay permiso para usar el micrófono. Revisa los permisos de Edge.",
+      "no-speech": "No he detectado voz. Pulsa Empezar a hablar e inténtalo otra vez.",
+      "audio-capture": "No encuentro un micrófono disponible.",
+      "network": "El reconocimiento necesita conexión a Internet. Comprueba la conexión e inténtalo otra vez."
+    };
+    estado(mensajes[evento.error] || ("Error de reconocimiento: " + evento.error));
+  };
+
+  reconocimiento.onend = () => {
+    escuchando = false;
+    const texto = (textoFinal + textoTemporal).trim();
+    if (texto) {
+      document.getElementById("transcripcion").textContent = texto;
+      estado("Grabación terminada. Ya puedes escuchar el texto o volver a empezar.");
+    } else {
+      estado("La escucha ha terminado. Si no apareció texto, inténtalo de nuevo.");
+    }
+  };
+
+  try {
+    reconocimiento.start();
+  } catch (error) {
+    escuchando = false;
+    estado("No he podido iniciar el micrófono. Espera un momento y vuelve a intentarlo.");
+  }
+}
+
+function pararVoz() {
+  if (reconocimiento && escuchando) {
+    reconocimiento.stop();
+    estado("Terminando la escucha...");
+  } else {
+    estado("No hay ninguna escucha activa.");
+  }
+}
+
+function leerTexto() {
+  const texto = document.getElementById("transcripcion").textContent.trim();
+  if (!texto || texto === "Aquí aparecerá el texto reconocido.") {
+    estado("Primero graba una frase.");
+    return;
+  }
+  if (!("speechSynthesis" in window)) {
+    estado("La lectura en voz alta no está disponible en este navegador.");
+    return;
+  }
+  const voz = new SpeechSynthesisUtterance(texto);
+  voz.lang = document.getElementById("idioma").value;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(voz);
+}
+
+async function copiarTexto() {
+  const texto = document.getElementById("transcripcion").textContent.trim();
+  if (!texto || texto === "Aquí aparecerá el texto reconocido.") {
+    estado("Primero graba una frase.");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(texto);
+    estado("Texto copiado.");
+  } catch {
+    estado("No he podido copiar automáticamente. Puedes seleccionar el texto y copiarlo.");
+  }
+}
+
+document.getElementById("archivoFoto").addEventListener("change", function() {
+  const archivo = this.files && this.files[0];
+  if (!archivo) return;
+  const imagen = document.getElementById("foto");
+  imagen.src = URL.createObjectURL(archivo);
+  imagen.classList.remove("oculto");
+  document.getElementById("avisoFoto").textContent =
+    "Foto cargada. La extracción automática del texto se añadirá después.";
+});
+</script>
+</body>
+</html>
