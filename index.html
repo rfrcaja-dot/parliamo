@@ -174,7 +174,10 @@ function iniciarVoz() {
     escuchando = true;
     estado("🎙️ Te estoy escuchando. Habla ahora y pulsa STOP al terminar.");
   };
-
+console.log("RESULTADOS DE VOZ:", Array.from(evento.results).map(r => ({
+  texto: r[0].transcript,
+  definitivo: r.isFinal
+})));
   
 
 reconocimiento.onresult = (evento) => {
